@@ -1,5 +1,8 @@
 import os
 import json
+import re
+import time
+import emoji
 
 ''' Take the field of a full tweet and output a new compacted tweet with only the
     required fields. As describe in the hw the fields are as follow:
@@ -14,16 +17,47 @@ import json
     - tweet_xx
     - tweet_date
 '''
+
+def extract_emojis(str):
+  return ''.join(c for c in str if c in emoji.UNICODE_EMOJI)
+
 def compact_tweet(tweet,city,topic):
+
+    if topic =='social_unrest' :
+        topic = 'social unrest'
+    if topic == 'infrastructure':
+        topic = 'infra'
+    hashtags = re.findall(r"#(\w+)", tweet['text'])
+    hashtags_text = None
+    hashtags_text = ', '.join(hashtags).strip()
+
+    mentions = re.findall(r"@(\w+)", tweet['text'])
+    mentions_text = None
+    mentions_text = ', '.join(mentions).strip()
+
+    emojis = extract_emojis(tweet['text'])
+
+    rtext = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    urls = re.findall(rtext,tweet['text'])
+
+    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(tweet['created_at'],'%a %b %d %H:%M:%S +0000 %Y'))
+
+    coords = None
+    if tweet["geo"]:
+        coords = tweet["geo"]['coordinates']
+
     return {
             "city":city, "tweet_lang":tweet['lang'],"topic":topic,
             "tweet_text":tweet['text'],
-            "tweet_{}".format(tweet['lang']):tweet['text'],
-            "tweet_date":tweet['created_at'],
-            "hashtags":tweet['entities']['hashtags'],
-            "user_mentions":tweet['entities']['user_mentions'],
-            "tweet_loc": tweet["geo"]
+            'hashtags':hashtags_text,
+            'tweet_urls':urls,
+            'mentions':mentions_text,
+            "tweet_date":ts,
+            "tweet_loc": coords,
+            'tweet_emoticons':emojis
             }
+            # ,
+            #
 
 def open_twitter_json(file):
     file_name = os.path.basename(os.path.normpath(file))
@@ -44,14 +78,23 @@ if __name__ == '__main__':
     for topic in topics:
         twitter_files = list_twitter_files('./results/{}'.format(topic))
         tweets = []
+        #print('files in {} are {}'.format(topic,len(twitter_files)))
         for twitter_file in twitter_files:
             for city in ["NYC","Delhi","Bangkok","Paris","Mexico City"]:
                 if city in twitter_file: break
+                else:
+                     city = None
+
+            if city not in twitter_file:
+                print(twitter_file)
+                continue
 
             twitter_json = open_twitter_json(twitter_file)
             for tweet in twitter_json:
-                tweets.append(compact_tweet(tweet,city,topic))
+                if tweet['lang'] in ['es','en','fr','hi','th']:
+                    tweets.append(compact_tweet(tweet,city,topic))
 
         print('Saving {} preprocessed data for {}'.format(len(tweets),topic))
+
         with open("./processed/{}.json".format(topic), 'w', encoding='utf8') as fp:
             json.dump(tweets, fp)
