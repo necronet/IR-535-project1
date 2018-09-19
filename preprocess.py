@@ -35,20 +35,31 @@ def compact_tweet(tweet,city,topic):
     mentions_text = None
     mentions_text = ', '.join(mentions).strip()
 
-    emojis = extract_emojis(tweet['text'])
+    emoji_pattern = re.compile(u'['
+                        u'\U0001F300-\U0001F5FF'
+                        u'\U0001F600-\U0001F64F'
+                        u'\U0001F680-\U0001F6FF'
+                        u'\u2600-\u26FF\u2700-\u27BF]+',
+                        re.UNICODE)
 
+    emojis = extract_emojis(tweet['text'])
     rtext = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     urls = re.findall(rtext,tweet['text'])
-
     ts = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(tweet['created_at'],'%a %b %d %H:%M:%S +0000 %Y'))
+
+    #text = emoji_pattern.sub(r'', tweet['text'])
+    #print(tweet['text'])
+    #print(text)
 
     coords = None
     if tweet["geo"]:
         coords = tweet["geo"]['coordinates']
 
+    #print(city.lower())
+
     return {
-            "city":city, "tweet_lang":tweet['lang'],"topic":topic,
-            "tweet_text":tweet['text'],
+            "city":city.lower(), "tweet_lang":tweet['lang'],"topic":topic,
+            "text":tweet['text'],
             'hashtags':hashtags_text,
             'tweet_urls':urls,
             'mentions':mentions_text,
