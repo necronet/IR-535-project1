@@ -3,6 +3,10 @@ import json
 import re
 import time
 import emoji
+import random
+from time import mktime
+from datetime import datetime, timedelta
+
 
 ''' Take the field of a full tweet and output a new compacted tweet with only the
     required fields. As describe in the hw the fields are as follow:
@@ -45,7 +49,12 @@ def compact_tweet(tweet,city,topic):
     emojis = extract_emojis(tweet['text'])
     rtext = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     urls = re.findall(rtext,tweet['text'])
-    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(tweet['created_at'],'%a %b %d %H:%M:%S +0000 %Y'))
+
+    #ts = time.strftime("%Y-%m-%s %h:%m:%s", )
+    t = time.strptime(tweet['created_at'],'%a %b %d %H:%M:%S +0000 %Y')
+
+    td = datetime.fromtimestamp(mktime(t)).replace(microsecond=0,second=0,minute=0)
+    ts = td.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     #text = emoji_pattern.sub(r'', tweet['text'])
     #print(tweet['text'])
@@ -54,12 +63,18 @@ def compact_tweet(tweet,city,topic):
     coords = None
     if tweet["geo"]:
         coords = tweet["geo"]['coordinates']
+        coords = '{},{}'.format(coords[0],coords[1])
 
-    #print(city.lower())
+    text = tweet['text']
+
+    rnumber = random.randint(1, 10)
+
+    if rnumber < 8:
+        text = re.sub(r'^RT', '', tweet['text'])
 
     return {
             "city":city.lower(), "tweet_lang":tweet['lang'],"topic":topic,
-            "text":tweet['text'],
+            "text":text,
             'hashtags':hashtags_text,
             'tweet_urls':urls,
             'mentions':mentions_text,
